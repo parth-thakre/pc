@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A Linux-first 1440p RX 9070 XT build, Alienware QD-OLED setup, LOQ compute node and Dell Vostro services homelab.">
+  <title>The 1440p Linux build with a second life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: oklch(0.085 0 0);
+      --surface: oklch(0.14 0.012 110);
+      --surface-high: oklch(0.19 0.018 110);
+      --ink: oklch(0.96 0.012 110);
+      --muted: oklch(0.74 0.018 110);
+      --primary: oklch(0.79 0.11 110);
+      --primary-soft: oklch(0.28 0.055 110);
+      --accent: oklch(0.72 0.14 299);
+      --danger: oklch(0.72 0.16 30);
+      --line: oklch(0.31 0.018 110);
+      --max: 1220px;
+      --shadow: 0 8px 8px oklch(0 0 0 / 0.18);
+      --ease: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.58;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-underline-offset: .22em; }
+    a:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+    }
+    button, input { font: inherit; }
+    .shell { width: min(calc(100% - 40px), var(--max)); margin-inline: auto; }
+    .skip-link {
+      position: fixed; left: 16px; top: 12px; z-index: 20;
+      transform: translateY(-150%); padding: 10px 14px;
+      color: var(--bg); background: var(--primary); border-radius: 8px;
+    }
+    .skip-link:focus { transform: none; }
+
+    .topbar {
+      position: absolute; z-index: 10; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px clamp(20px, 5vw, 72px);
+      color: var(--ink);
+    }
+    .brand {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 1.05rem; font-weight: 700; letter-spacing: .045em;
+      text-transform: uppercase; text-decoration: none;
+    }
+    .topbar nav { display: flex; gap: clamp(16px, 3vw, 34px); }
+    .topbar nav a { color: var(--muted); text-decoration: none; }
+    .topbar nav a:hover { color: var(--ink); }
+
+    .hero {
+      position: relative; min-height: 820px; display: flex; align-items: center;
+      isolation: isolate; overflow: hidden;
+    }
+    .hero::before {
+      content: ""; position: absolute; inset: 0; z-index: -2;
+      background: url("linux-1440p-setup.png") center center / cover no-repeat;
+      animation: settle 1.2s var(--ease) both;
+    }
+    .hero::after {
+      content: ""; position: absolute; inset: 0; z-index: -1;
+      background: linear-gradient(90deg, oklch(0.055 0 0 / .98) 0%, oklch(0.055 0 0 / .90) 28%, oklch(0.055 0 0 / .32) 66%, oklch(0.055 0 0 / .08) 100%);
+    }
+    @keyframes settle { from { scale: 1.035; filter: brightness(.72); } to { scale: 1; filter: brightness(1); } }
+    .hero-copy { width: min(650px, 82vw); padding-top: 56px; }
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin: 0 0 22px; color: var(--primary); font-weight: 700;
+    }
+    .hero-kicker::before { content: ""; width: 32px; height: 2px; background: currentColor; }
+    h1, h2, h3 { margin: 0; font-family: "Barlow Condensed", sans-serif; text-wrap: balance; }
+    h1 {
+      max-width: 10ch; font-size: clamp(4.2rem, 9.8vw, 6rem);
+      line-height: .9; letter-spacing: -.035em; font-weight: 600;
+    }
+    .hero-copy > p:not(.hero-kicker) {
+      max-width: 54ch; margin: 28px 0 0; color: oklch(0.88 0.012 110);
+      font-size: clamp(1.05rem, 2vw, 1.24rem); text-wrap: pretty;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 48px; padding: 11px 18px; border: 0; border-radius: 8px;
+      font-weight: 700; text-decoration: none; cursor: pointer;
+      transition: transform .25s var(--ease), background-color .25s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button.primary { color: oklch(0.12 0.025 110); background: var(--primary); }
+    .button.secondary { color: var(--ink); background: oklch(0.19 0 0 / .88); border: 1px solid oklch(0.62 0 0 / .65); }
+    .hero-summary {
+      display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 44px;
+      color: var(--muted); font-size: .95rem;
+    }
+    .hero-summary span { display: inline-flex; align-items: center; gap: 8px; }
+    .hero-summary span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+
+    main { overflow: hidden; }
+    section { padding-block: clamp(76px, 10vw, 138px); }
+    .intro {
+      display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr);
+      gap: clamp(42px, 8vw, 110px); align-items: end;
+    }
+    h2 { font-size: clamp(2.8rem, 6vw, 4.8rem); line-height: .95; letter-spacing: -.025em; }
+    .intro p { max-width: 70ch; margin: 24px 0 0; color: var(--muted); font-size: 1.12rem; }
+    .spend {
+      padding: 24px 0 4px; border-top: 1px solid var(--line);
+      font-family: "Barlow Condensed", sans-serif;
+    }
+    .spend strong { display: block; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1; color: var(--primary); }
+    .spend span { display: block; margin-top: 8px; color: var(--muted); font-family: "Atkinson Hyperlegible", sans-serif; }
+
+    .section-head {
+      display: flex; justify-content: space-between; align-items: end; gap: 28px;
+      margin-bottom: 42px;
+    }
+    .section-head p { max-width: 48ch; margin: 0; color: var(--muted); }
+    .build-list { border-top: 1px solid var(--line); }
+    .part-row {
+      position: relative; display: grid;
+      grid-template-columns: minmax(110px, .7fr) minmax(260px, 2.1fr) minmax(250px, 2fr) minmax(100px, .65fr) 112px;
+      gap: 20px; align-items: center; padding: 26px 0;
+      border-bottom: 1px solid var(--line);
+      transition: background-color .2s ease, opacity .2s ease;
+    }
+    .part-row:hover { background: oklch(0.16 0.014 110 / .55); }
+    .part-row.is-bought { opacity: .52; }
+    .part-row.is-bought .part-name { text-decoration: line-through; }
+    .part-category { color: var(--primary); font-size: .88rem; font-weight: 700; }
+    .part-name { display: block; font-size: 1.13rem; font-weight: 700; text-decoration: none; }
+    .part-name:hover { color: var(--primary); }
+    .part-spec, .stock-note { color: var(--muted); font-size: .94rem; }
+    .price { font-family: "Barlow Condensed", sans-serif; font-size: 1.38rem; font-weight: 600; white-space: nowrap; }
+    .buy-link {
+      justify-self: end; color: var(--ink); font-weight: 700; text-decoration-color: var(--primary);
+    }
+    .buy-check {
+      position: absolute; right: -34px; width: 19px; height: 19px; accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .market-note {
+      display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: center;
+      margin-top: 36px; padding: 24px 28px; border-radius: 12px; background: var(--primary-soft);
+    }
+    .market-note p { margin: 0; color: oklch(0.9 0.02 110); }
+    .market-note strong { color: var(--primary); }
+
+    .owned { background: var(--primary); color: oklch(0.12 0.025 110); }
+    .owned h2 { max-width: 9ch; }
+    .owned .section-head p { color: oklch(0.29 0.04 110); }
+    .owned-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px solid oklch(0.22 0.035 110); }
+    .owned-item {
+      display: grid; grid-template-columns: 78px 1fr; gap: 18px;
+      padding: 30px 26px 30px 0; border-bottom: 1px solid oklch(0.34 0.04 110 / .65);
+    }
+    .owned-item:nth-child(odd) { padding-right: 44px; }
+    .owned-item:nth-child(even) { padding-left: 44px; border-left: 1px solid oklch(0.34 0.04 110 / .65); }
+    .owned-index { font-family: "Barlow Condensed", sans-serif; font-size: 1.05rem; line-height: 1; font-weight: 700; letter-spacing: .06em; opacity: .62; }
+    .owned-item h3 { font-size: 1.45rem; line-height: 1.1; }
+    .owned-item p { margin: 8px 0 0; color: oklch(0.25 0.035 110); }
+    .owned-item a { font-weight: 700; }
+
+    .topology-wrap { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(42px, 8vw, 100px); align-items: center; }
+    .topology-copy p { color: var(--muted); max-width: 52ch; }
+    .topology-copy ul { padding-left: 1.2em; color: var(--muted); }
+    .connection-map { display: grid; gap: 24px; }
+    .connection-lane { padding-top: 14px; border-top: 1px solid oklch(0.34 0.04 110 / .65); }
+    .lane-title { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .flow { display: grid; grid-template-columns: minmax(118px, 1fr) 64px minmax(132px, 1.08fr) 64px minmax(138px, 1fr); align-items: center; }
+    .flow.direct { grid-template-columns: minmax(132px, 1fr) 64px minmax(170px, 1.2fr); }
+    .connection-node { padding: 14px 15px; border-radius: 10px; background: var(--surface-high); min-width: 0; }
+    .connection-node strong { display: block; color: var(--ink); line-height: 1.15; }
+    .connection-node span { display: block; margin-top: 5px; color: var(--muted); font-size: .78rem; line-height: 1.3; }
+    .connection-node.hub { background: var(--primary); }
+    .connection-node.hub strong { color: oklch(0.12 0.025 110); }
+    .connection-node.hub span { color: oklch(0.27 0.04 110); }
+    .endpoint-stack { display: grid; gap: 8px; }
+    .edge { min-height: 42px; position: relative; display: flex; align-items: center; color: var(--primary); }
+    .edge::before { content: ""; position: absolute; left: 0; right: 13px; top: 50%; height: 1px; background: var(--primary); }
+    .edge b { margin-left: auto; font-size: 1.35rem; line-height: 1; font-weight: 400; }
+    .edge span { position: absolute; inset: 1px 0 auto; text-align: center; color: var(--muted); font-size: .66rem; font-weight: 700; letter-spacing: .03em; }
+    .edge.reverse::before { left: 13px; right: 0; }
+    .edge.reverse b { margin: 0 auto 0 0; }
+
+    .warranty { padding-block: clamp(70px, 9vw, 110px); background: oklch(0.22 0.06 299); }
+    .warranty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 7vw, 90px); }
+    .warranty h2 { color: oklch(0.91 0.06 299); }
+    .warranty p { max-width: 62ch; color: oklch(0.84 0.035 299); }
+    .warranty-facts { border-top: 1px solid oklch(0.52 0.08 299); }
+    .warranty-fact { display: flex; justify-content: space-between; gap: 28px; padding: 17px 0; border-bottom: 1px solid oklch(0.52 0.08 299); }
+    .warranty-fact span { color: oklch(0.78 0.04 299); }
+    .warranty-fact strong.yes { color: oklch(0.86 0.12 130); }
+    .warranty a { font-weight: 700; }
+
+    .future-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(42px, 9vw, 120px); }
+    .future-grid > div:first-child { position: sticky; top: 30px; align-self: start; }
+    .future-grid p { color: var(--muted); }
+    .future-step { display: grid; grid-template-columns: 38px 1fr; gap: 18px; padding: 25px 0; border-top: 1px solid var(--line); }
+    .future-step:last-child { border-bottom: 1px solid var(--line); }
+    .future-step .dot { width: 13px; height: 13px; margin-top: 8px; border-radius: 50%; background: var(--primary); }
+    .future-step h3 { font-size: 1.5rem; }
+    .future-step p { margin: 7px 0 0; }
+
+    .sources { padding-top: 0; }
+    .source-list { columns: 2; column-gap: 60px; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+    .source-list li { break-inside: avoid; padding: 15px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+    .source-list a { color: var(--ink); }
+    footer { padding: 34px 0 54px; color: var(--muted); border-top: 1px solid var(--line); }
+    footer .shell { display: flex; justify-content: space-between; gap: 20px; }
+
+    @media (max-width: 980px) {
+      .hero { min-height: 740px; align-items: end; padding-bottom: 64px; }
+      .hero::before { background-position: 58% center; }
+      .hero::after { background: linear-gradient(0deg, oklch(0.055 0 0 / .97) 0%, oklch(0.055 0 0 / .78) 50%, oklch(0.055 0 0 / .18) 100%); }
+      .hero-copy { width: min(690px, 92vw); }
+      .intro, .topology-wrap, .future-grid { grid-template-columns: 1fr; }
+      .part-row { grid-template-columns: 110px minmax(220px, 1.4fr) minmax(200px, 1fr) 90px; }
+      .part-row .buy-link { grid-column: 2; justify-self: start; }
+      .part-row .buy-check { right: 4px; }
+      .future-grid > div:first-child { position: static; }
+    }
+
+    @media (max-width: 700px) {
+      .shell { width: min(calc(100% - 28px), var(--max)); }
+      .topbar nav { display: none; }
+      .hero { min-height: 690px; }
+      h1 { font-size: clamp(3.8rem, 18vw, 5.3rem); }
+      .section-head { align-items: start; flex-direction: column; }
+      .part-row { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; padding: 24px 4px; }
+      .part-category, .part-spec, .stock-note { grid-column: 1 / -1; }
+      .part-name { grid-column: 1; }
+      .price { grid-column: 2; grid-row: 2; }
+      .buy-link { grid-column: 1 !important; margin-top: 8px; }
+      .buy-check { right: 4px; bottom: 28px; }
+      .market-note { grid-template-columns: 1fr; }
+      .owned-list { grid-template-columns: 1fr; }
+      .owned-item, .owned-item:nth-child(odd), .owned-item:nth-child(even) { padding: 25px 0; border-left: 0; }
+      .flow, .flow.direct { grid-template-columns: 1fr; gap: 7px; }
+      .edge, .edge.reverse { min-height: 30px; justify-content: center; }
+      .edge::before, .edge.reverse::before { display: none; }
+      .edge b, .edge.reverse b { display: none; }
+      .edge span { position: static; padding: 6px 10px; border-radius: 999px; background: oklch(0.23 0.035 110); }
+      .connection-node { padding: 13px; }
+      .warranty-grid { grid-template-columns: 1fr; }
+      .source-list { columns: 1; }
+      footer .shell { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the build</a>
+  <header class="topbar">
+    <a class="brand" href="#top">Second Life / 1440p</a>
+    <nav aria-label="Page sections">
+      <a href="#buy">Buy</a>
+      <a href="#owned">Owned</a>
+      <a href="#connections">Connections</a>
+      <a href="#future">Future</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="shell">
+      <div class="hero-copy">
+        <p class="hero-kicker">Final spec · 17 July 2026</p>
+        <h1 id="hero-title">A 1440p Linux rig with a second life.</h1>
+        <p>Ryzen 7 9700X and RX 9070 XT drive the Alienware QD-OLED now. In five or six years, this desktop replaces the RTX 4060 LOQ as the homelab and AI node.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#buy">Open the build list ↓</a>
+          <a class="button secondary" href="#connections">See every connection</a>
+        </div>
+        <div class="hero-summary" aria-label="Build highlights">
+          <span>Linux primary</span><span>1440p / 280Hz OLED</span><span>PCIe 5.0 ×16</span><span>2.5GbE + DAS</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main id="main">
+    <section>
+      <div class="shell intro">
+        <div>
+          <h2>The settled build, without pretending ₹2.5L is sacred.</h2>
+          <p>This is the honest version: no ADATA SSD, no B650 compromise, no monitor-audio detour, and no throwing away gear that already works. Prices below are the live listed snapshot I found; RAM is currently the ugly outlier.</p>
+        </div>
+        <div class="spend" aria-label="Estimated current spend">
+          <strong>₹2.58 lakh</strong>
+          <span>Tower + OLED monitor: ₹2,58,284, before the separately purchased network switch and PTM7950 service. Tower alone: ₹2,01,185.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="buy">
+      <div class="shell">
+        <div class="section-head">
+          <h2>Buy now.</h2>
+          <p>Exact models, live links and the reason each survived the argument. Check a row when it is ordered; the page remembers locally.</p>
+        </div>
+
+        <div class="build-list" aria-label="PC parts list">
+          <article class="part-row" data-item="AMD Ryzen 7 9700X — Vedant Computers">
+            <span class="part-category">CPU</span>
+            <a class="part-name" href="https://www.vedantcomputers.com/amd-ryzen-7-9700x-100-100001404wof" target="_blank" rel="noopener">AMD Ryzen 7 9700X ↗</a>
+            <span class="part-spec">8C/16T Zen 5, 65W and up to 5.5GHz. The extra two cores suit Linux development, containers and the machine's eventual homelab role.</span>
+            <span class="price">₹30,200</span>
+            <a class="buy-link" href="https://www.vedantcomputers.com/amd-ryzen-7-9700x-100-100001404wof" target="_blank" rel="noopener">Buy CPU</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark CPU as ordered">
+          </article>
+
+          <article class="part-row" data-item="ASRock Radeon RX 9070 XT Challenger 16GB — Computech Store">
+            <span class="part-category">GPU</span>
+            <a class="part-name" href="https://computechstore.in/product/asrock-challenger-radeon-rx-9070-xt-16gb/" target="_blank" rel="noopener">ASRock RX 9070 XT Challenger 16GB ↗</a>
+            <span class="part-spec">Best-value in-stock option: triple-fan, 2×8-pin and 290mm long, with the same 2400MHz game / 2970MHz boost clocks as the pricier Steel Legend Dark. Excellent Linux fit through upstream amdgpu + Mesa/RADV.</span>
+            <span class="price">₹69,699</span>
+            <a class="buy-link" href="https://computechstore.in/product/asrock-challenger-radeon-rx-9070-xt-16gb/" target="_blank" rel="noopener">Buy GPU</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark GPU as ordered">
+          </article>
+
+          <article class="part-row" data-item="Gigabyte B850 Gaming X WiFi6E — Computech Store">
+            <span class="part-category">BOARD</span>
+            <a class="part-name" href="https://computechstore.in/product/gigabyte-b850-gaming-x-wifi6e-am5-atx/" target="_blank" rel="noopener">Gigabyte B850 Gaming X WiFi6E ↗</a>
+            <span class="part-spec">PCIe 5.0 ×16, 12×60A Vcore design, 3 M.2, 4 SATA, 2.5GbE and Wi-Fi 6E. The right single-accelerator platform without workstation-board tax.</span>
+            <span class="price">₹16,694</span>
+            <a class="buy-link" href="https://www.gigabyte.com/Motherboard/B850-GAMING-X-WIFI6E-rev-1x/sp" target="_blank" rel="noopener">Full specs</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark motherboard as ordered">
+          </article>
+
+          <article class="part-row" data-item="Corsair Vengeance RGB 32GB DDR5-6000 CL36 — Computech Store">
+            <span class="part-category">MEMORY</span>
+            <a class="part-name" href="https://computechstore.in/product/corsair-vengeance-cmh32gx5m2e6000c36/" target="_blank" rel="noopener">Corsair Vengeance RGB 32GB ↗</a>
+            <span class="part-spec">2×16GB, DDR5-6000 CL36, 36-44-44-96 at 1.35V. XMP rather than EXPO, but supported by the Gigabyte board; the latency tradeoff is worth the saving.</span>
+            <span class="price">₹43,499</span>
+            <a class="buy-link" href="https://computechstore.in/product/corsair-vengeance-cmh32gx5m2e6000c36/" target="_blank" rel="noopener">Buy memory</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark memory as ordered">
+          </article>
+
+          <article class="part-row" data-item="Kioxia Exceria Basic 2TB — Computech Store">
+            <span class="part-category">SSD</span>
+            <a class="part-name" href="https://computechstore.in/product/kioxia-exceria-basic-2tb-lsf10z002tg8/" target="_blank" rel="noopener">Kioxia Exceria Basic 2TB ↗</a>
+            <span class="part-spec">Your chosen non-ADATA drive. Gen4, up to 7300/6800 MB/s; QLC/HMB is fine for the main gaming volume, not scratch-heavy write work.</span>
+            <span class="price">₹23,999</span>
+            <a class="buy-link" href="https://apac.kioxia.com/content/dam/kioxia/shared/personal/support/download/ssd/asset/productbrief/KIOXIA_Exceria_Basic_NVMe_SSD_Product_Brief.pdf" target="_blank" rel="noopener">Data sheet</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark SSD as ordered">
+          </article>
+
+          <article class="part-row" data-item="DeepCool AK400 — Computech Store">
+            <span class="part-category">COOLER</span>
+            <a class="part-name" href="https://computechstore.in/product/deepcool-ak400-cpu-air-cooler-black/" target="_blank" rel="noopener">DeepCool AK400 ↗</a>
+            <span class="part-spec">In-stock AM5 tower cooler with four heatpipes and a 120 mm FDB fan. A sensible, quiet fit for the 65W 9700X without paying for a display or creating clearance drama with the RGB RAM.</span>
+            <span class="price">₹2,449</span>
+            <a class="buy-link" href="https://computechstore.in/product/deepcool-ak400-cpu-air-cooler-black/" target="_blank" rel="noopener">In stock</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark cooler as ordered">
+          </article>
+
+          <article class="part-row" data-item="MSI MAG A850GL PCIE5 ATX 3.1 — MDComputers">
+            <span class="part-category">PSU</span>
+            <a class="part-name" href="https://mdcomputers.in/product/msi-mag-a850gl-pcie5-atx3-1-gold-modular-smps/smps/80-plus-gold-smps" target="_blank" rel="noopener">MSI MAG A850GL PCIE5 850W ↗</a>
+            <span class="part-spec">ATX 3.1, fully modular, 80 Plus Gold, four 6+2-pin PCIe and eight SATA power connectors. Seven-year warranty.</span>
+            <span class="price">₹9,450</span>
+            <a class="buy-link" href="https://mdcomputers.in/product/msi-mag-a850gl-pcie5-atx3-1-gold-modular-smps/smps/80-plus-gold-smps" target="_blank" rel="noopener">Buy PSU</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark PSU as ordered">
+          </article>
+
+          <article class="part-row" data-item="DeepCool CG530 4F Black — Computech Store">
+            <span class="part-category">CASE</span>
+            <a class="part-name" href="https://computechstore.in/product/deepcool-cg530-4f-bk/" target="_blank" rel="noopener">DeepCool CG530 4F Black ↗</a>
+            <span class="part-spec">Compact dual-chamber ATX case with four included PWM/ARGB fans, 410mm GPU clearance and front 10Gbps USB-C. The owned DAS makes a ₹23K drive-cage case pointless.</span>
+            <span class="price">₹5,195</span>
+            <a class="buy-link" href="https://computechstore.in/product/deepcool-cg530-4f-bk/" target="_blank" rel="noopener">Case specs</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark case as ordered">
+          </article>
+
+          <article class="part-row" data-item="Alienware AW2725D 27-inch QD-OLED — Dell Store">
+            <span class="part-category">DISPLAY</span>
+            <a class="part-name" href="https://www.dellstore.com/alienware-27-280hz-qd-oled-gaming-monitor-aw2725d-210-bscn.html" target="_blank" rel="noopener">Alienware AW2725D QD-OLED ↗</a>
+            <span class="part-spec">27-inch, 2560×1440, 280Hz, 0.03ms, two HDMI 2.1 inputs plus DP 1.4. PC on DP; Switch 2 on HDMI.</span>
+            <span class="price">₹57,099</span>
+            <a class="buy-link" href="https://www.dell.com/en-in/shop/alienware-27-280hz-qd-oled-gaming-monitor-aw2725d/apd/210-bscn/monitors-monitor-accessories" target="_blank" rel="noopener">Dell specs</a>
+            <input class="buy-check" type="checkbox" aria-label="Mark monitor as ordered">
+          </article>
+
+        </div>
+
+        <div class="market-note">
+          <p><strong>Price reality:</strong> ₹43,499 for 32GB is still grotesque, but CL36 saves ₹7,800 against the in-stock CL30 option for a tiny practical performance difference. If the purchase can wait, keep watching for a normal-priced 6000 CL36 kit.</p>
+          <a class="button secondary" href="https://www.primeabgb.com/online-price-reviews-india/g-skill-flare-x5-32gb-2x16gb-6000mhz-ddr5-memory-f5-6000j3038f16gx2-fx5/" target="_blank" rel="noopener">Track Flare X5</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="owned" id="owned">
+      <div class="shell">
+        <div class="section-head">
+          <h2>Already on the desk.</h2>
+          <p>These are not shopping-list padding. They are the reason the finished system is more capable than a tower-and-monitor total suggests.</p>
+        </div>
+        <div class="owned-list">
+          <article class="owned-item">
+            <span class="owned-index">SWITCH</span>
+            <div><h3>Nintendo Switch 2</h3><p>HDMI 2.1 into the Alienware. Its top USB-C and 3.5mm port stay physically accessible, so the console does not depend on monitor audio. <a href="https://www.nintendo.com/en-gb/Hardware/Nintendo-Switch-2/Nintendo-Switch-2-Specifications-2785627.html" target="_blank" rel="noopener">Official specs ↗</a></p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">LOQ</span>
+            <div><h3>Lenovo LOQ 15IRH8</h3><p>Core i7-13620H, RTX 4060 8GB at up to 115W. PTM7950 service first; then it becomes the always-on homelab/compute node. <a href="https://psref.lenovo.com/syspool/Sys/PDF/LOQ/LOQ_15IRH8/LOQ_15IRH8_Spec.PDF" target="_blank" rel="noopener">Lenovo PSREF ↗</a></p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">VOSTRO</span>
+            <div><h3>Dell Vostro service node</h3><p>8th-generation Core i7 U-series processor and 8GB RAM. Keep this lower-power laptop on Ethernet for SearXNG, Pi-hole, the MCP server and other lightweight always-on infrastructure; leave GPU and heavier container work to the LOQ.</p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">SSD</span>
+            <div><h3>Spare 1TB SSD</h3><p>Install it in M.2_2 alongside the 2TB Kioxia in M.2_1. Two slots used, one still free; the board's SATA ports remain untouched.</p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">DAS</span>
+            <div><h3>PiBOX D3532 dual-bay enclosure</h3><p>Two 2.5/3.5-inch SATA bays, USB-C 5Gbps UASP, cooling fan and hardware JBOD/RAID 0/RAID 1/clone modes. Connect it directly to the desktop; RAID is availability, not a backup. <a href="https://pibox.in/product/pibox-india-dual-2-bay-3-5-2-5-inch-sata-hdd-ssd-aluminium-enclosure-dock-external-raid-0-1-jbod-clone-storage-with-usb-3-1-type-c-6gbps-uasp-56tb-capacity-cooling-fan-realtek-chipset/" target="_blank" rel="noopener">Official page ↗</a></p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">AUDIO</span>
+            <div><h3>DAC + IEM</h3><p>Connect the DAC directly to the desktop over USB and the IEM to the DAC. For Switch play, use its own 3.5mm port or USB-C as preferred.</p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">LAN</span>
+            <div><h3>Laptop 2.5GbE adapter</h3><p>Already covered. The LOQ goes straight into the new 2.5GbE switch without another adapter purchase.</p></div>
+          </article>
+          <article class="owned-item">
+            <span class="owned-index">PTM</span>
+            <div><h3>PTM7950 service</h3><p>Use an appropriately sized genuine pad on the LOQ CPU/GPU dies. <a href="https://www.moddiy.com/products/6061/Honeywell-PTM7950-SP-Super-Highly-Thermally-Conductive-PCM-Pad.html" target="_blank" rel="noopener">Reference source ↗</a>; service cost is not included in the total.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="connections">
+      <div class="shell topology-wrap">
+        <div class="topology-copy">
+          <h2>One desk. Four distinct systems.</h2>
+          <p>The monitor is only the display hub. Audio remains direct, while the network switch ties together the Linux desktop, LOQ compute node and low-power Vostro service node.</p>
+          <ul>
+            <li>Desktop → DisplayPort 1.4 → Alienware</li>
+            <li>Switch 2 → HDMI 2.1 → Alienware</li>
+            <li>Desktop + LOQ adapter + Vostro Ethernet → Real HD switch</li>
+            <li>Desktop USB-C → PiBOX dual-bay DAS</li>
+            <li>Desktop USB → DAC → IEM</li>
+          </ul>
+          <button class="button secondary" id="copy-list" type="button">Copy shopping list</button>
+        </div>
+        <div class="connection-map" aria-label="Connection topology diagram">
+          <div class="connection-lane">
+            <div class="lane-title"><span>Network</span><span>Ethernet only</span></div>
+            <div class="flow">
+              <div class="connection-node"><strong>Router / uplink</strong><span>Existing internet edge</span></div>
+              <div class="edge"><span>Ethernet</span><b aria-hidden="true">→</b></div>
+              <div class="connection-node hub"><strong>Real HD switch</strong><span>Separately purchased · 5 × 2.5GbE · 1 × 10G SFP+</span></div>
+              <div class="edge"><span>2.5GbE</span><b aria-hidden="true">→</b></div>
+              <div class="endpoint-stack">
+                <div class="connection-node"><strong>Linux desktop</strong><span>Native 2.5GbE</span></div>
+                <div class="connection-node"><strong>LOQ homelab</strong><span>Via owned USB adapter</span></div>
+                <div class="connection-node"><strong>Vostro services</strong><span>Ethernet · SearXNG · Pi-hole · MCP</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="connection-lane">
+            <div class="lane-title"><span>Display</span><span>Two inputs · one screen</span></div>
+            <div class="flow">
+              <div class="connection-node"><strong>Linux desktop</strong><span>RX 9070 XT output</span></div>
+              <div class="edge"><span>DisplayPort</span><b aria-hidden="true">→</b></div>
+              <div class="connection-node"><strong>Alienware OLED</strong><span>AW2725D · 1440p / 280Hz</span></div>
+              <div class="edge reverse"><span>HDMI 2.1</span><b aria-hidden="true">←</b></div>
+              <div class="connection-node"><strong>Switch 2</strong><span>Separate console input</span></div>
+            </div>
+          </div>
+
+          <div class="connection-lane">
+            <div class="lane-title"><span>Direct peripherals</span><span>Not connected to the network switch</span></div>
+            <div class="flow direct">
+              <div class="connection-node"><strong>Linux desktop</strong><span>Rear motherboard USB</span></div>
+              <div class="edge"><span>USB</span><b aria-hidden="true">→</b></div>
+              <div class="endpoint-stack">
+                <div class="connection-node"><strong>DAC + IEM</strong><span>Direct USB audio path</span></div>
+                <div class="connection-node"><strong>PiBOX DAS</strong><span>USB-C · UASP · dual SATA</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="warranty" aria-labelledby="warranty-title">
+      <div class="shell warranty-grid">
+        <div>
+          <h2 id="warranty-title">The OLED warranty, stated precisely.</h2>
+          <p>The AW2725D remains the monitor choice. Dell India's official monitor-support policy says QD-OLED panels have a maximum three-year warranty term and explicitly includes burn-in. The three-year limit is a duration cap, not a burn-in exclusion.</p>
+          <p><a href="https://www.dell.com/support/contents/en-in/article/warranty/premium-support-for-monitors" target="_blank" rel="noopener">Read Dell India's monitor warranty policy ↗</a></p>
+        </div>
+        <div class="warranty-facts" aria-label="Alienware warranty facts">
+          <div class="warranty-fact"><span>Limited hardware warranty</span><strong>3 years</strong></div>
+          <div class="warranty-fact"><span>Advanced exchange</span><strong>Yes</strong></div>
+          <div class="warranty-fact"><span>Premium panel exchange</span><strong>Yes</strong></div>
+          <div class="warranty-fact"><span>QD-OLED maximum warranty term</span><strong>3 years</strong></div>
+          <div class="warranty-fact"><span>OLED burn-in coverage</span><strong class="yes">Included</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="future">
+      <div class="shell future-grid">
+        <div>
+          <h2>The five-to-six-year handoff is already accounted for.</h2>
+          <p>This is the main Linux PC now. When a newer system takes that role, this machine replaces the LOQ as the homelab and single-accelerator AI node.</p>
+        </div>
+        <div>
+          <article class="future-step"><span class="dot" aria-hidden="true"></span><div><h3>Now: Linux gaming first</h3><p>Install a current distro kernel, Mesa and linux-firmware so RDNA 4 support is not held back by old packages. Use the distro's upstream amdgpu/RADV stack for gaming.</p></div></article>
+          <article class="future-step"><span class="dot" aria-hidden="true"></span><div><h3>Now: keep bulk storage external</h3><p>The owned PiBOX dual-bay DAS handles SATA capacity over USB-C, so the compact airflow case stays uncluttered. Keep a separate backup regardless of RAID mode.</p></div></article>
+          <article class="future-step"><span class="dot" aria-hidden="true"></span><div><h3>Later: grow memory, not motherboard</h3><p>The four DIMM slots allow a future 64GB or 128GB configuration. PCIe 5.0 ×16 preserves the path to one faster accelerator without pretending this is a dual-GPU platform.</p></div></article>
+          <article class="future-step"><span class="dot" aria-hidden="true"></span><div><h3>Keep lightweight services on the Vostro</h3><p>Run SearXNG, Pi-hole and the MCP server on the 8th-gen i7 U-series laptop. It is the low-power control-plane box; the LOQ remains available for workloads that benefit from more CPU, RAM or the RTX 4060.</p></div></article>
+          <article class="future-step"><span class="dot" aria-hidden="true"></span><div><h3>In five or six years: replace the LOQ</h3><p>Move containers, build jobs and supported ROCm/inference experiments onto the 9700X/9070 XT desktop. The i7-13620H/RTX 4060 laptop can then retire from heavier always-on duty, while the Vostro continues hosting lightweight network services.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sources">
+      <div class="shell">
+        <div class="section-head"><h2>Reference shelf.</h2><p>Manufacturer pages and the non-obvious source links used in the decisions above.</p></div>
+        <ul class="source-list">
+          <li><a href="https://www.gigabyte.com/Motherboard/B850-GAMING-X-WIFI6E-rev-1x/sp" target="_blank" rel="noopener">Gigabyte B850 Gaming X official specification</a></li>
+          <li><a href="https://www.dell.com/en-in/shop/alienware-27-280hz-qd-oled-gaming-monitor-aw2725d/apd/210-bscn/monitors-monitor-accessories" target="_blank" rel="noopener">Alienware AW2725D official India page</a></li>
+          <li><a href="https://www.dell.com/support/contents/en-in/article/warranty/premium-support-for-monitors" target="_blank" rel="noopener">Dell India monitor support policy — QD-OLED burn-in coverage</a></li>
+          <li><a href="https://psref.lenovo.com/syspool/Sys/PDF/LOQ/LOQ_15IRH8/LOQ_15IRH8_Spec.PDF" target="_blank" rel="noopener">Lenovo LOQ 15IRH8 PSREF</a></li>
+          <li><a href="https://www.nintendo.com/en-gb/Hardware/Nintendo-Switch-2/Nintendo-Switch-2-Specifications-2785627.html" target="_blank" rel="noopener">Nintendo Switch 2 specification</a></li>
+          <li><a href="https://www.amd.com/en/resources/support-articles/release-notes/RN-AMDGPU-LINUX-ROCM-7-2.html" target="_blank" rel="noopener">AMD Linux / ROCm release notes</a></li>
+          <li><a href="https://apac.kioxia.com/content/dam/kioxia/shared/personal/support/download/ssd/asset/productbrief/KIOXIA_Exceria_Basic_NVMe_SSD_Product_Brief.pdf" target="_blank" rel="noopener">Kioxia Exceria Basic product brief</a></li>
+          <li><a href="https://computechstore.in/product/deepcool-cg530-4f-bk/" target="_blank" rel="noopener">DeepCool CG530 4F listing and dimensions</a></li>
+          <li><a href="https://pibox.in/product/pibox-india-dual-2-bay-3-5-2-5-inch-sata-hdd-ssd-aluminium-enclosure-dock-external-raid-0-1-jbod-clone-storage-with-usb-3-1-type-c-6gbps-uasp-56tb-capacity-cooling-fan-realtek-chipset/" target="_blank" rel="noopener">PiBOX D3532 official specification</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell"><span>Built around Linux, reuse and honest constraints.</span><span>Price snapshot: 17 July 2026 · India</span></div>
+  </footer>
+
+  <script>
+    const storageKey = 'second-life-build-ordered';
+    const rows = [...document.querySelectorAll('.part-row')];
+    const saved = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+
+    rows.forEach((row, index) => {
+      const checkbox = row.querySelector('.buy-check');
+      checkbox.checked = saved.has(index);
+      row.classList.toggle('is-bought', checkbox.checked);
+      checkbox.addEventListener('change', () => {
+        row.classList.toggle('is-bought', checkbox.checked);
+        if (checkbox.checked) saved.add(index); else saved.delete(index);
+        localStorage.setItem(storageKey, JSON.stringify([...saved]));
+      });
+    });
+
+    document.querySelector('#copy-list').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const text = rows.map(row => `• ${row.dataset.item} (${row.querySelector('.price').textContent.trim()})`).join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'Copied ✓';
+      } catch {
+        button.textContent = 'Copy blocked by browser';
+      }
+      setTimeout(() => button.textContent = 'Copy shopping list', 2200);
+    });
+  </script>
+</body>
+</html>
