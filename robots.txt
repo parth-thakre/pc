@@ -1,0 +1,4 @@
+# Public site: indexing and AI access are allowed.
+User-agent: *
+Allow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full
